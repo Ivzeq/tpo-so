@@ -11,17 +11,13 @@
 #  Ajuste. Si algún proceso no entra por fragmentación externa, aplica
 #  compactación y vuelve a intentar.
 #
-#  Uso:
-#     ./asignacion_memoria.sh            -> ejecuta los tres algoritmos
-#     ./asignacion_memoria.sh primer     -> solo Primer Ajuste
-#     ./asignacion_memoria.sh mejor      -> solo Mejor Ajuste
-#     ./asignacion_memoria.sh peor       -> solo Peor Ajuste
+#  Uso:  ./asignacion_memoria.sh
 # =====================================================================
 
 # ---------------------------------------------------------------------
 # 1. ESTADO INICIAL DE LA MEMORIA (en KB)
-#    La memoria se representa como una lista de segmentos contiguos.
-#    Cada segmento tiene un DUEÑO y un TAMAÑO:
+#    La memoria se representa como una lista de bloques contiguos.
+#    Cada bloque tiene un DUEÑO y un TAMAÑO:
 #      - "LIBRE"  -> hueco disponible
 #      - otro     -> zona ocupada (SO o procesos ya cargados)
 #    Huecos libres: 100, 500, 200, 300 y 600 KB, separados por procesos
@@ -47,17 +43,17 @@ reiniciar_memoria() {
     TAM=("${INI_TAM[@]}")
 }
 
-# Dibuja el mapa de memoria con la dirección inicial de cada segmento
+# Dibuja el mapa de memoria: número de bloque, tamaño y contenido
 mostrar_mapa() {
-    local dir=0
-    echo "   Inicio    Tamaño    Contenido"
+    local total=0
+    echo "   Bloque   Tamaño    Contenido"
     for i in "${!DUENO[@]}"; do
         local etiqueta=${DUENO[$i]}
         [[ $etiqueta == "LIBRE" ]] && etiqueta="--- libre ---"
-        printf "   %-9s %-9s %-10s\n" "$dir" "${TAM[$i]} KB" "$etiqueta"
-        dir=$((dir + TAM[i]))
+        printf "   %-8s %-9s %s\n" "$((i + 1))" "${TAM[$i]} KB" "$etiqueta"
+        total=$((total + TAM[i]))
     done
-    echo "   Memoria total: $dir KB"
+    echo "   Memoria total: $total KB"
 }
 
 # Calcula LIBRE_TOTAL, HUECO_MAYOR y CANT_HUECOS
@@ -74,7 +70,7 @@ calcular_libre() {
 
 # ---------------------------------------------------------------------
 # ALGORITMO DE CARGA: elige el hueco según la estrategia.
-# Devuelve en ELEGIDO el índice del segmento, o -1 si ninguno sirve.
+# Devuelve en ELEGIDO el índice del bloque, o -1 si ninguno sirve.
 # ---------------------------------------------------------------------
 elegir_hueco() {
     local estrategia=$1 tam=$2
@@ -94,7 +90,7 @@ elegir_hueco() {
 }
 
 # Carga el proceso en el hueco elegido. Si sobra espacio, el sobrante
-# queda como un hueco libre nuevo a continuación (partición variable).
+# queda como un bloque libre nuevo a continuación (partición variable).
 cargar_proceso() {
     local idx=$1 nombre=$2 tam=$3
     local sobrante=$((TAM[idx] - tam))
@@ -107,7 +103,7 @@ cargar_proceso() {
 }
 
 # ---------------------------------------------------------------------
-# COMPACTACIÓN: mueve todos los segmentos ocupados hacia el inicio de
+# COMPACTACIÓN: mueve todos los bloques ocupados hacia el inicio de
 # la memoria (reubicación) y junta todos los huecos en uno solo al final.
 # ---------------------------------------------------------------------
 compactar() {
@@ -143,12 +139,12 @@ simular() {
         local nom=${PROC_NOMBRE[$p]} tam=${PROC_TAM[$p]}
         elegir_hueco "$estrategia" "$tam"
         if (( ELEGIDO == -1 )); then
-            printf "   %-8s %-9s %-14s %-10s\n" "$nom" "$tam KB" "NINGUNO" "-"
+            printf "   %-8s %-9s %-14s %s\n" "$nom" "$tam KB" "NINGUNO" "-"
             pendientes+=("$p")
         else
             local hueco=${TAM[$ELEGIDO]}
             cargar_proceso "$ELEGIDO" "$nom" "$tam"
-            printf "   %-8s %-9s %-14s %-10s\n" "$nom" "$tam KB" "$hueco KB" "$((hueco - tam)) KB"
+            printf "   %-8s %-9s %-14s %s\n" "$nom" "$tam KB" "$hueco KB" "$((hueco - tam)) KB"
         fi
     done
 
@@ -190,28 +186,15 @@ simular() {
             done
             pendientes=("${restantes[@]}")
             calcular_libre
-            echo
-            echo "   Mapa final:"
-            mostrar_mapa
         fi
     fi
 
-    RESUMEN+=("$(printf "%-15s %-10s %-12s %-14s %-12s" "$titulo" "$compacto" "${#pendientes[@]}" "$CANT_HUECOS" "$HUECO_MAYOR KB")")
+    RESUMEN+=("$(printf "%-15s %-10s %-12s %-14s %s" "$titulo" "$compacto" "${#pendientes[@]}" "$CANT_HUECOS" "$HUECO_MAYOR KB")")
 }
 
 # ---------------------------------------------------------------------
 # Programa principal
 # ---------------------------------------------------------------------
-case ${1:-todos} in
-    primer) LISTA=(primer) ;;
-    mejor)  LISTA=(mejor) ;;
-    peor)   LISTA=(peor) ;;
-    todos)  LISTA=(primer mejor peor) ;;
-    *) echo "Uso: $0 [primer|mejor|peor]"; exit 1 ;;
-esac
-
-declare -A TITULOS=([primer]="PRIMER AJUSTE" [mejor]="MEJOR AJUSTE" [peor]="PEOR AJUSTE")
-
 echo "Procesos a cargar: $(for p in "${!PROC_NOMBRE[@]}"; do printf "%s=%sKB " "${PROC_NOMBRE[$p]}" "${PROC_TAM[$p]}"; done)"
 reiniciar_memoria
 echo
@@ -219,9 +202,9 @@ echo "Estado inicial de la memoria:"
 mostrar_mapa
 
 RESUMEN=()
-for e in "${LISTA[@]}"; do
-    simular "$e" "${TITULOS[$e]}"
-done
+simular primer "PRIMER AJUSTE"
+simular mejor  "MEJOR AJUSTE"
+simular peor   "PEOR AJUSTE"
 
 echo
 echo "========================== COMPARACIÓN =========================="
