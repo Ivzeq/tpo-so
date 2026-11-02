@@ -150,9 +150,6 @@ simular() {
             compactar
             compacto="SI"
             echo
-            echo "   Mapa de memoria después de compactar:"
-            mostrar_mapa
-            echo
             local restantes=()
             for p in "${pendientes[@]}"; do
                 elegir_hueco "$estrategia" "${PROC_TAM[$p]}"
@@ -165,6 +162,9 @@ simular() {
                 fi
             done
             pendientes=("${restantes[@]}")
+            echo
+            echo "   Mapa de memoria después de compactar:"
+            mostrar_mapa
             calcular_libre
         fi
     fi
