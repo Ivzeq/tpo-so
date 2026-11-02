@@ -1,27 +1,7 @@
 #!/bin/bash
-# =====================================================================
-#  asignacion_memoria.sh
-#  Sistemas Operativos - TPO - Ejercicio Unidad 3
-#  Tema: Estrategias de asignación de memoria a procesos de distintos
-#        tamaños (algoritmos de carga, fragmentación externa y
-#        compactación).
-#
-#  Simula una memoria principal con particiones variables. Sobre el
-#  mismo estado inicial aplica Primer Ajuste, Mejor Ajuste y Peor
-#  Ajuste. Si algún proceso no entra por fragmentación externa, aplica
-#  compactación y vuelve a intentar.
-#
-#  Uso:  ./asignacion_memoria.sh
-# =====================================================================
 
 # ---------------------------------------------------------------------
 # 1. ESTADO INICIAL DE LA MEMORIA (en KB)
-#    La memoria se representa como una lista de bloques contiguos.
-#    Cada bloque tiene un DUEÑO y un TAMAÑO:
-#      - "LIBRE"  -> hueco disponible
-#      - otro     -> zona ocupada (SO o procesos ya cargados)
-#    Huecos libres: 100, 500, 200, 300 y 600 KB, separados por procesos
-#    que ya estaban en memoria (A, B, C, D).
 # ---------------------------------------------------------------------
 INI_DUENO=(SO    LIBRE A  LIBRE B  LIBRE C   LIBRE D  LIBRE)
 INI_TAM=(  100   100   50 500   80 200   120 300   60 600)
