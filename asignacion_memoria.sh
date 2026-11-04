@@ -16,6 +16,12 @@ PROC_TAM=(   212 417 112 426)
 # Funciones auxiliares
 # ---------------------------------------------------------------------
 
+# Pausa la ejecución hasta que se presione Enter
+pausa() {
+    echo
+    read -r -p "   [Presione Enter para continuar]"
+}
+
 # Copia el estado inicial a la memoria de trabajo (cada algoritmo
 # arranca desde la misma situación)
 reiniciar_memoria() {
@@ -136,6 +142,7 @@ simular() {
     echo "   Memoria libre total : $LIBRE_TOTAL KB en $CANT_HUECOS huecos"
     echo "   Hueco libre mayor   : $HUECO_MAYOR KB"
     echo "   Procesos sin cargar : ${#pendientes[@]}"
+    pausa
 
     local compacto="NO"
     if (( ${#pendientes[@]} > 0 )); then
@@ -166,6 +173,7 @@ simular() {
             echo "   Mapa de memoria después de compactar:"
             mostrar_mapa
             calcular_libre
+            pausa
         fi
     fi
 
@@ -180,6 +188,7 @@ reiniciar_memoria
 echo
 echo "Estado inicial de la memoria:"
 mostrar_mapa
+pausa
 
 RESUMEN=()
 simular primer "PRIMER AJUSTE"
